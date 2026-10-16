@@ -95,6 +95,18 @@ public class CustomerMeController {
         return bookingService.payBalance(bookingId);
     }
 
+    /** Re-issues bank-transfer instructions for a booking still awaiting deposit/full payment. */
+    @PostMapping("/bookings/{bookingId}/pay-deposit")
+    public DepositInstructions payDeposit(Authentication auth, @PathVariable UUID bookingId) {
+        UUID customerId = UUID.fromString(auth.getName());
+        Booking booking = bookings.findById(bookingId)
+                .orElseThrow(() -> new BookingNotFoundException(bookingId));
+        if (!booking.customerId().equals(customerId)) {
+            throw new BookingNotFoundException(bookingId);
+        }
+        return bookingService.payDeposit(bookingId);
+    }
+
     @GetMapping("/notifications")
     public List<CustomerNotification> notifications(Authentication auth) {
         return notifications.findByCustomer(UUID.fromString(auth.getName()), 50);

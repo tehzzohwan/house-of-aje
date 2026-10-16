@@ -21,6 +21,7 @@ import type {
   PublishedReview,
   Review,
   ReviewStatus,
+  ReviewSummary,
   Service,
   ServiceCategory,
   StaffAvailability,
@@ -133,6 +134,11 @@ export const api = {
 
   reviews(serviceId: string, limit = 10): Promise<PublishedReview[]> {
     return request<PublishedReview[]>(`/api/public/reviews?serviceId=${serviceId}&limit=${limit}`);
+  },
+
+  /** Latest published reviews plus the aggregate rating, for the landing page. */
+  reviewsSummary(limit = 3): Promise<ReviewSummary> {
+    return request<ReviewSummary>(`/api/public/reviews/latest?limit=${limit}`);
   },
 };
 
@@ -352,6 +358,13 @@ export const customerApi = {
   /** Start in-app payment of the remaining balance on a confirmed booking. */
   payBalance(id: string): Promise<DepositInstructions> {
     return adminRequest<DepositInstructions>(`/api/customer/bookings/${id}/pay-balance`, {
+      method: "POST",
+    });
+  },
+
+  /** Re-issue bank-transfer instructions for a booking still awaiting deposit/full payment. */
+  payDeposit(id: string): Promise<DepositInstructions> {
+    return adminRequest<DepositInstructions>(`/api/customer/bookings/${id}/pay-deposit`, {
       method: "POST",
     });
   },

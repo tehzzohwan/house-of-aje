@@ -202,55 +202,55 @@ export default function BookPage() {
     return (
       <div className="mx-auto max-w-lg">
         <h1 className="text-3xl font-semibold tracking-tight">Booking confirmed</h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-2 text-hoa-muted">
           Your slot is reserved pending deposit. Reference:{" "}
           <span className="font-mono font-medium">{booking.reference}</span>
         </p>
 
-        <dl className="mt-6 space-y-2 rounded-xl border border-black/10 p-5 text-sm dark:border-white/10">
+        <dl className="hoa-surface mt-6 space-y-2 p-5 text-sm">
           <div className="flex justify-between">
-            <dt className="text-zinc-500">Service</dt>
+            <dt className="text-hoa-muted">Service</dt>
             <dd>{selectedService?.name}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-zinc-500">Time</dt>
+            <dt className="text-hoa-muted">Time</dt>
             <dd>{formatTimeRange(booking.startAt, booking.endAt)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-zinc-500">Price</dt>
+            <dt className="text-hoa-muted">Price</dt>
             <dd>{formatMoney(booking.price)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-zinc-500">
+            <dt className="text-hoa-muted">
               {booking.depositAmount >= booking.price ? "Amount due" : "Deposit due"}
             </dt>
             <dd className="font-medium">{formatMoney(booking.depositAmount)}</dd>
           </div>
         </dl>
 
-        <div className="mt-6 rounded-xl border border-black/10 p-5 dark:border-white/10">
+        <div className="hoa-surface mt-6 p-5">
           <h2 className="font-semibold">
             {booking.depositAmount >= booking.price ? "Complete your payment" : "Pay your deposit"}
           </h2>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-hoa-muted">
             Transfer the amount to the account below. Your booking is confirmed once the payment
             is received.
           </p>
           <dl className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="text-zinc-500">Bank</dt>
+              <dt className="text-hoa-muted">Bank</dt>
               <dd>{depositInstructions.bankName}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-zinc-500">Account number</dt>
+              <dt className="text-hoa-muted">Account number</dt>
               <dd className="font-mono">{depositInstructions.accountNumber}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-zinc-500">Account name</dt>
+              <dt className="text-hoa-muted">Account name</dt>
               <dd>{depositInstructions.accountName}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-zinc-500">Reference</dt>
+              <dt className="text-hoa-muted">Reference</dt>
               <dd className="font-mono">{depositInstructions.providerReference}</dd>
             </div>
           </dl>
@@ -258,7 +258,7 @@ export default function BookPage() {
 
         <Link
           href="/account"
-          className="mt-6 inline-block rounded-full bg-black px-6 py-3 text-sm font-medium text-white dark:bg-white dark:text-black"
+          className="cta-gradient mt-6 inline-block px-6 py-3 text-sm font-semibold"
         >
           View my bookings
         </Link>
@@ -277,7 +277,7 @@ export default function BookPage() {
             <select
               value={categoryKey}
               onChange={(e) => chooseCategory(e.target.value)}
-              className="mt-2 block w-full max-w-sm rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="mt-2 block w-full max-w-sm rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text focus:border-hoa-gold focus:outline-none"
             >
               {groups.map((group) => (
                 <option key={group.key} value={group.key}>
@@ -292,7 +292,7 @@ export default function BookPage() {
             <select
               value={serviceId}
               onChange={(e) => setServiceId(e.target.value)}
-              className="mt-2 block w-full max-w-sm rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="mt-2 block w-full max-w-sm rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text focus:border-hoa-gold focus:outline-none"
             >
               {groupServices.map((service) => (
                 <option key={service.id} value={service.id}>
@@ -309,7 +309,7 @@ export default function BookPage() {
               value={date}
               min={businessDateString()}
               onChange={(e) => setDate(e.target.value)}
-              className="mt-2 block w-full max-w-sm rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="mt-2 block w-full max-w-sm rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text focus:border-hoa-gold focus:outline-none"
             />
           </label>
         </section>
@@ -317,9 +317,9 @@ export default function BookPage() {
         <section>
           <h2 className="text-sm font-medium">Choose a specialist</h2>
           {loadingStaff ? (
-            <p className="mt-3 text-sm text-zinc-500">Loading specialists…</p>
+            <p className="mt-3 text-sm text-hoa-muted">Loading specialists…</p>
           ) : staffList.length === 0 ? (
-            <p className="mt-3 text-sm text-zinc-500">
+            <p className="mt-3 text-sm text-hoa-muted">
               No specialists perform this service. Try another service.
             </p>
           ) : (
@@ -330,14 +330,14 @@ export default function BookPage() {
                 return (
                   <li
                     key={s.id}
-                    className={`rounded-xl border p-4 ${
-                      selected ? "border-black dark:border-white" : "border-black/10 dark:border-white/10"
+                    className={`hoa-surface p-4 ${
+                      selected ? "border-hoa-gold" : ""
                     }`}
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="font-medium">{s.name}</p>
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs text-hoa-muted">
                           {s.available ? "Available on this date" : "No availability on this date"}
                         </p>
                       </div>
@@ -345,14 +345,14 @@ export default function BookPage() {
                         <button
                           type="button"
                           onClick={() => selectStaff(s.id)}
-                          className="rounded-full border border-black/15 px-3 py-1 text-xs hover:border-black dark:border-white/15 dark:hover:border-white"
+                          className="rounded-full border border-hoa-border-strong px-3 py-1 text-xs hover:border-hoa-gold hover:text-hoa-text"
                         >
                           Select staff
                         </button>
                         <button
                           type="button"
                           onClick={() => toggleDetails(s.id)}
-                          className="rounded-full border border-black/15 px-3 py-1 text-xs hover:border-black dark:border-white/15 dark:hover:border-white"
+                          className="rounded-full border border-hoa-border-strong px-3 py-1 text-xs hover:border-hoa-gold hover:text-hoa-text"
                         >
                           Details
                         </button>
@@ -360,14 +360,14 @@ export default function BookPage() {
                     </div>
 
                     {showDetails && (
-                      <div className="mt-3 border-t border-black/10 pt-3 text-sm dark:border-white/10">
-                        {s.bio && <p className="text-zinc-600 dark:text-zinc-400">{s.bio}</p>}
+                      <div className="mt-3 border-t border-hoa-border pt-3 text-sm">
+                        {s.bio && <p className="text-hoa-muted">{s.bio}</p>}
                         {s.services.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
                             {s.services.map((name) => (
                               <span
                                 key={name}
-                                className="rounded-full bg-black/5 px-3 py-1 text-xs dark:bg-white/10"
+                                className="rounded-full bg-white/10 px-3 py-1 text-xs"
                               >
                                 {name}
                               </span>
@@ -387,9 +387,9 @@ export default function BookPage() {
           <section>
             <h2 className="text-sm font-medium">Choose a time</h2>
             {loadingSlots ? (
-              <p className="mt-3 text-sm text-zinc-500">Loading availability…</p>
+              <p className="mt-3 text-sm text-hoa-muted">Loading availability…</p>
             ) : sortedSlots.length === 0 ? (
-              <p className="mt-3 text-sm text-zinc-500">
+              <p className="mt-3 text-sm text-hoa-muted">
                 No available times for this specialist on this date.
               </p>
             ) : (
@@ -401,8 +401,8 @@ export default function BookPage() {
                     onClick={() => chooseSlot(s)}
                     className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                       slot?.start === s.start && slot?.staffId === s.staffId
-                        ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                        : "border-black/15 hover:border-black dark:border-white/15 dark:hover:border-white"
+                        ? "border-hoa-gold bg-hoa-gold text-hoa-ink"
+                        : "border-hoa-border-strong hover:border-hoa-gold hover:text-hoa-text"
                     }`}
                   >
                     {formatTime(s.start)}
@@ -420,28 +420,28 @@ export default function BookPage() {
               <button
                 type="button"
                 onClick={() => setPayFull(false)}
-                className={`rounded-xl border p-4 text-left transition-colors ${
+                className={`hoa-surface p-4 text-left transition-colors ${
                   !payFull
-                    ? "border-black dark:border-white"
-                    : "border-black/15 hover:border-black dark:border-white/15 dark:hover:border-white"
+                    ? "border-hoa-gold"
+                    : ""
                 }`}
               >
                 <span className="block font-medium">Pay deposit</span>
-                <span className="block text-xs text-zinc-500">
+                <span className="block text-xs text-hoa-muted">
                   {formatMoney(selectedService.price * 0.4)} now
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => setPayFull(true)}
-                className={`rounded-xl border p-4 text-left transition-colors ${
+                className={`hoa-surface p-4 text-left transition-colors ${
                   payFull
-                    ? "border-black dark:border-white"
-                    : "border-black/15 hover:border-black dark:border-white/15 dark:hover:border-white"
+                    ? "border-hoa-gold"
+                    : ""
                 }`}
               >
                 <span className="block font-medium">Pay in full</span>
-                <span className="block text-xs text-zinc-500">
+                <span className="block text-xs text-hoa-muted">
                   {formatMoney(selectedService.price)} now
                 </span>
               </button>
@@ -450,18 +450,18 @@ export default function BookPage() {
         )}
 
         {!loggedIn && (
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-hoa-muted">
             You&apos;ll be asked to sign in or register after choosing a time, so you can see your
             booking details and countdown.
           </p>
         )}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
 
         <button
           type="submit"
           disabled={!slot || submitting}
-          className="rounded-full bg-black px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+          className="cta-gradient rounded-full px-6 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
         >
           {submitting ? "Booking…" : "Confirm booking"}
         </button>

@@ -23,7 +23,7 @@ export default function BackButton() {
       type="button"
       onClick={goBack}
       aria-label="Return to previous page"
-      className="mb-6 inline-block text-sm text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white"
+      className="mb-6 inline-block text-sm text-hoa-muted hover:text-hoa-gold"
     >
       ← Back
     </button>

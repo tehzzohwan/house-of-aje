@@ -36,6 +36,12 @@ const STATUSES: BookingStatus[] = [
   "EXPIRED",
 ];
 
+const PAYMENT_STATE_LABELS: Record<string, string> = {
+  AWAITING_PAYMENT: "Awaiting deposit",
+  DEPOSIT_PAID: "Deposit paid",
+  PAID_IN_FULL: "Payment complete",
+};
+
 const EMPTY_SERVICE_FORM = {
   name: "",
   slug: "",
@@ -171,16 +177,16 @@ export default function AdminPage() {
     await Promise.all([loadAll(), loadBookings()]);
   }, [loadAll, loadBookings]);
 
-  if (!ready) return <p className="text-zinc-500">Loading…</p>;
+  if (!ready) return <p className="text-hoa-muted">Loading…</p>;
 
   if (!authed) {
     return (
       <div className="mx-auto max-w-sm text-center">
         <h1 className="text-3xl font-semibold tracking-tight">Admin</h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">Sign in to manage bookings and reviews.</p>
+        <p className="mt-2 text-hoa-muted">Sign in to manage bookings and reviews.</p>
         <Link
           href="/login"
-          className="mt-6 inline-block rounded-full bg-black px-6 py-3 text-sm font-medium text-white dark:bg-white dark:text-black"
+          className="cta-gradient mt-6 inline-block px-6 py-3 text-sm font-semibold"
         >
           Sign in
         </Link>
@@ -473,8 +479,8 @@ export default function AdminPage() {
             onClick={() => setTab(t.key)}
             className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               tab === t.key
-                ? "bg-black text-white dark:bg-white dark:text-black"
-                : "border border-black/15 hover:border-black dark:border-white/15 dark:hover:border-white"
+                ? "bg-hoa-gold text-hoa-ink"
+                : "border border-hoa-border-strong hover:border-hoa-gold hover:text-hoa-text"
             }`}
           >
             {t.label}
@@ -482,8 +488,8 @@ export default function AdminPage() {
         ))}
       </div>
 
-      {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-      {busy && <p className="text-sm text-zinc-500">Refreshing…</p>}
+      {error && <p className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400">{error}</p>}
+      {busy && <p className="text-sm text-hoa-muted">Refreshing…</p>}
 
       {tab === "reports" && (
         <section>
@@ -496,7 +502,7 @@ export default function AdminPage() {
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="rounded-lg border border-black/15 bg-white px-2 py-1.5 dark:border-white/15 dark:bg-black"
+                className="rounded-lg border border-hoa-border-strong bg-white/5 px-2 py-1.5 text-sm text-hoa-text focus:border-hoa-gold focus:outline-none"
               />
             </label>
             <label className="flex items-center gap-2">
@@ -505,13 +511,13 @@ export default function AdminPage() {
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="rounded-lg border border-black/15 bg-white px-2 py-1.5 dark:border-white/15 dark:bg-black"
+                className="rounded-lg border border-hoa-border-strong bg-white/5 px-2 py-1.5 text-sm text-hoa-text focus:border-hoa-gold focus:outline-none"
               />
             </label>
             <button
               type="button"
               onClick={downloadPaymentsCsv}
-              className="rounded-full border border-black/15 px-3 py-1.5 text-xs hover:border-black dark:border-white/15 dark:hover:border-white"
+              className="rounded-full border border-hoa-border-strong px-3 py-1.5 text-xs hover:border-hoa-gold hover:text-hoa-text"
             >
               Download payments CSV
             </button>
@@ -526,14 +532,14 @@ export default function AdminPage() {
           )}
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-black/10 p-5 dark:border-white/10">
+            <div className="hoa-surface p-5">
               <h3 className="font-medium">Best selling</h3>
               <Table
                 rows={bestSelling.map((b) => [b.serviceName, String(b.completed), formatMoney(b.revenue)])}
                 head={["Service", "Completed", "Revenue"]}
               />
             </div>
-            <div className="rounded-xl border border-black/10 p-5 dark:border-white/10">
+            <div className="hoa-surface p-5">
               <h3 className="font-medium">Staff performance</h3>
               <Table
                 rows={staff.map((s) => [
@@ -560,7 +566,7 @@ export default function AdminPage() {
                 setStatusFilter(e.target.value as BookingStatus | "");
                 setBookingsPage(0);
               }}
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             >
               <option value="">All statuses</option>
               {STATUSES.map((s) => (
@@ -571,9 +577,9 @@ export default function AdminPage() {
             </select>
           </div>
 
-          <div className="mt-4 overflow-x-auto rounded-xl border border-black/10 dark:border-white/10">
+          <div className="mt-4 hoa-surface overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-black/10 bg-zinc-50 text-left dark:border-white/10 dark:bg-white/5">
+              <thead className="border-b border-hoa-border bg-white/5 text-left text-hoa-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Reference</th>
                   <th className="px-4 py-3 font-medium">Customer</th>
@@ -581,6 +587,7 @@ export default function AdminPage() {
                   <th className="px-4 py-3 font-medium">Staff</th>
                   <th className="px-4 py-3 font-medium">Start</th>
                   <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Payment</th>
                   <th className="px-4 py-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
@@ -596,18 +603,21 @@ export default function AdminPage() {
                     })),
                   ];
                   return (
-                    <tr key={b.id} className="border-b border-black/5 last:border-0 dark:border-white/5">
+                    <tr key={b.id} className="border-b border-hoa-border last:border-0">
                       <td className="px-4 py-3 font-mono">{b.reference}</td>
                       <td className="px-4 py-3">{b.customerName}</td>
                       <td className="px-4 py-3">{b.serviceName}</td>
                       <td className="px-4 py-3">{b.staffName}</td>
                       <td className="px-4 py-3">{formatDateTime(b.startAt)}</td>
                       <td className="px-4 py-3">{b.status}</td>
+                      <td className="px-4 py-3">
+                        {PAYMENT_STATE_LABELS[b.paymentState] ?? b.paymentState}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         {actions.length > 0 ? (
                           <KebabMenu actions={actions} />
                         ) : (
-                          <span className="text-zinc-400">—</span>
+                          <span className="text-hoa-muted">—</span>
                         )}
                       </td>
                     </tr>
@@ -618,21 +628,21 @@ export default function AdminPage() {
           </div>
 
           <div className="mt-3 flex items-center justify-between text-sm">
-            <p className="text-zinc-500">
+            <p className="text-hoa-muted">
               {bookingsTotal} booking{bookingsTotal === 1 ? "" : "s"} · page {bookingsPage + 1} of {totalPages}
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setBookingsPage((p) => Math.max(0, p - 1))}
                 disabled={bookingsPage === 0}
-                className="rounded-full border border-black/15 px-4 py-1.5 text-xs hover:border-black disabled:opacity-40 dark:border-white/15 dark:hover:border-white"
+                className="rounded-full border border-hoa-border-strong px-4 py-1.5 text-xs hover:border-hoa-gold disabled:opacity-40"
               >
                 Previous
               </button>
               <button
                 onClick={() => setBookingsPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={bookingsPage >= totalPages - 1}
-                className="rounded-full border border-black/15 px-4 py-1.5 text-xs hover:border-black disabled:opacity-40 dark:border-white/15 dark:hover:border-white"
+                className="rounded-full border border-hoa-border-strong px-4 py-1.5 text-xs hover:border-hoa-gold disabled:opacity-40"
               >
                 Next
               </button>
@@ -647,14 +657,14 @@ export default function AdminPage() {
 
           <form
             onSubmit={saveStaff}
-            className="mt-4 grid gap-3 rounded-xl border border-black/10 p-5 dark:border-white/10 sm:grid-cols-2 lg:grid-cols-3"
+            className="mt-4 grid gap-3 hoa-surface p-5 sm:grid-cols-2 lg:grid-cols-3"
           >
             <input
               placeholder="Name"
               value={staffForm.name}
               onChange={(e) => setStaffForm({ ...staffForm, name: e.target.value })}
               required
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             <input
               type="email"
@@ -662,20 +672,20 @@ export default function AdminPage() {
               value={staffForm.email}
               onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
               required
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             <input
               placeholder="Phone"
               value={staffForm.phone}
               onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })}
               required
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             {editingStaffEditId && (
               <button
                 type="button"
                 onClick={cancelStaffEdit}
-                className="rounded-full border border-black/15 px-6 py-3 text-sm dark:border-white/15"
+                className="rounded-full border border-hoa-border-strong px-6 py-3 text-sm text-hoa-muted"
               >
                 Cancel
               </button>
@@ -683,19 +693,19 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={addingStaff}
-              className="rounded-full bg-black px-6 py-3 text-sm font-medium text-white disabled:opacity-40 dark:bg-white dark:text-black"
+              className="cta-gradient rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-40"
             >
               {addingStaff ? "Saving…" : editingStaffEditId ? "Save staff" : "Add staff"}
             </button>
           </form>
-          <p className="mt-2 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-hoa-muted">
             Name, email and phone are for notifications only — the staff member sets their own login
             details via the invite link.
           </p>
 
-          <div className="mt-4 overflow-x-auto rounded-xl border border-black/10 dark:border-white/10">
+          <div className="mt-4 hoa-surface overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-black/10 bg-zinc-50 text-left dark:border-white/10 dark:bg-white/5">
+              <thead className="border-b border-hoa-border bg-white/5 text-left text-hoa-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Email</th>
@@ -706,7 +716,7 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {staffMembers.map((s) => (
-                  <tr key={s.id} className="border-b border-black/5 last:border-0 dark:border-white/5">
+                  <tr key={s.id} className="border-b border-hoa-border last:border-0">
                     <td className="px-4 py-3">{s.name}</td>
                     <td className="px-4 py-3">{s.email ?? "—"}</td>
                     <td className="px-4 py-3">{s.phone ?? "—"}</td>
@@ -732,45 +742,45 @@ export default function AdminPage() {
           </div>
 
           {inviteLink && (
-            <div className="mt-4 rounded-xl border border-black/10 p-4 dark:border-white/10">
+            <div className="mt-4 hoa-surface p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-medium">Staff invite link</p>
                 <div className="flex gap-2">
                   <button
                     onClick={copyInviteLink}
-                    className="rounded-full bg-black px-3 py-1 text-xs font-medium text-white dark:bg-white dark:text-black"
+                    className="cta-gradient rounded-full px-3 py-1 text-xs font-semibold"
                   >
                     {copiedInvite ? "Copied!" : "Copy"}
                   </button>
                   <button
                     onClick={() => setInviteLink(null)}
                     aria-label="Clear invite link"
-                    className="rounded-full border border-black/15 px-3 py-1 text-xs hover:border-black dark:border-white/15 dark:hover:border-white"
+                    className="rounded-full border border-hoa-border-strong px-3 py-1 text-xs hover:border-hoa-gold hover:text-hoa-text"
                   >
                     ×
                   </button>
                 </div>
               </div>
-              <code className="mt-2 block break-all text-xs text-zinc-500">{inviteLink}</code>
+              <code className="mt-2 block break-all text-xs text-hoa-muted">{inviteLink}</code>
             </div>
           )}
 
           {editingStaffId && (
-            <div className="mt-6 space-y-6 rounded-xl border border-black/10 p-5 dark:border-white/10">
+            <div className="mt-6 space-y-6 hoa-surface p-5">
               <div className="flex items-center justify-between">
                 <h3 className="font-medium">
                   Availability — {staffMembers.find((s) => s.id === editingStaffId)?.name ?? ""}
                 </h3>
                 <button
                   onClick={() => setEditingStaffId(null)}
-                  className="rounded-full border border-black/15 px-4 py-2 text-sm hover:border-black dark:border-white/15 dark:hover:border-white"
+                  className="rounded-full border border-hoa-border-strong px-4 py-2 text-sm hover:border-hoa-gold hover:text-hoa-text"
                 >
                   Close
                 </button>
               </div>
 
               {availLoading ? (
-                <p className="text-sm text-zinc-500">Loading…</p>
+                <p className="text-sm text-hoa-muted">Loading…</p>
               ) : (
                 <div className="space-y-6">
                   <div>
@@ -779,7 +789,7 @@ export default function AdminPage() {
                       {services.map((sv) => (
                         <label
                           key={sv.id}
-                          className="flex cursor-pointer items-center gap-2 rounded-full border border-black/15 px-3 py-1 text-sm dark:border-white/15"
+                          className="flex cursor-pointer items-center gap-2 rounded-full border border-hoa-border-strong px-3 py-1 text-sm"
                         >
                           <input
                             type="checkbox"
@@ -797,31 +807,31 @@ export default function AdminPage() {
                     <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                       {DAYS.map((d) => (
                         <div key={d.day} className="flex items-center gap-2">
-                          <span className="w-10 text-sm text-zinc-500">{d.label}</span>
+                          <span className="w-10 text-sm text-hoa-muted">{d.label}</span>
                           <input
                             type="time"
                             value={availHours[d.day]?.startTime ?? ""}
                             onChange={(e) => setHour(d.day, "startTime", e.target.value)}
-                            className="rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm dark:border-white/15 dark:bg-black"
+                            className="rounded-lg border border-hoa-border-strong bg-white/5 px-2 py-1.5 text-sm text-hoa-text focus:border-hoa-gold focus:outline-none"
                           />
-                          <span className="text-zinc-400">–</span>
+                          <span className="text-hoa-muted">–</span>
                           <input
                             type="time"
                             value={availHours[d.day]?.endTime ?? ""}
                             onChange={(e) => setHour(d.day, "endTime", e.target.value)}
-                            className="rounded-lg border border-black/15 bg-white px-2 py-1.5 text-sm dark:border-white/15 dark:bg-black"
+                            className="rounded-lg border border-hoa-border-strong bg-white/5 px-2 py-1.5 text-sm text-hoa-text focus:border-hoa-gold focus:outline-none"
                           />
                         </div>
                       ))}
                     </div>
-                    <p className="mt-2 text-xs text-zinc-500">
+                    <p className="mt-2 text-xs text-hoa-muted">
                       Leave both times empty for a day the staff member is off.
                     </p>
                   </div>
 
                   <button
                     onClick={saveAvailability}
-                    className="rounded-full bg-black px-6 py-3 text-sm font-medium text-white dark:bg-white dark:text-black"
+                    className="cta-gradient rounded-full px-6 py-3 text-sm font-semibold"
                   >
                     Save availability
                   </button>
@@ -838,26 +848,26 @@ export default function AdminPage() {
 
           <form
             onSubmit={saveService}
-            className="mt-4 grid gap-3 rounded-xl border border-black/10 p-5 dark:border-white/10 sm:grid-cols-2 lg:grid-cols-3"
+            className="mt-4 grid gap-3 hoa-surface p-5 sm:grid-cols-2 lg:grid-cols-3"
           >
             <input
               placeholder="Name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             <input
               placeholder="Slug (optional)"
               value={form.slug}
               onChange={(e) => setForm({ ...form, slug: e.target.value })}
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             <input
               placeholder="Description (optional)"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             <input
               type="number"
@@ -866,7 +876,7 @@ export default function AdminPage() {
               value={form.durationMinutes}
               onChange={(e) => setForm({ ...form, durationMinutes: e.target.value })}
               required
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             <input
               type="number"
@@ -876,7 +886,7 @@ export default function AdminPage() {
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
               required
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             <input
               type="number"
@@ -884,12 +894,12 @@ export default function AdminPage() {
               placeholder="Buffer (minutes)"
               value={form.bufferMinutes}
               onChange={(e) => setForm({ ...form, bufferMinutes: e.target.value })}
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             <select
               value={form.categoryId}
               onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             >
               <option value="">No category</option>
               {categories.map((c) => (
@@ -902,7 +912,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={cancelServiceEdit}
-                className="rounded-full border border-black/15 px-6 py-3 text-sm dark:border-white/15"
+                className="rounded-full border border-hoa-border-strong px-6 py-3 text-sm text-hoa-muted"
               >
                 Cancel
               </button>
@@ -910,15 +920,15 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={adding}
-              className="rounded-full bg-black px-6 py-3 text-sm font-medium text-white disabled:opacity-40 dark:bg-white dark:text-black"
+              className="cta-gradient rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-40"
             >
               {adding ? "Saving…" : editingServiceId ? "Save service" : "Add service"}
             </button>
           </form>
 
-          <div className="mt-4 overflow-x-auto rounded-xl border border-black/10 dark:border-white/10">
+          <div className="mt-4 hoa-surface overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-black/10 bg-zinc-50 text-left dark:border-white/10 dark:bg-white/5">
+              <thead className="border-b border-hoa-border bg-white/5 text-left text-hoa-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Category</th>
@@ -931,7 +941,7 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {services.map((s) => (
-                  <tr key={s.id} className="border-b border-black/5 last:border-0 dark:border-white/5">
+                  <tr key={s.id} className="border-b border-hoa-border last:border-0">
                     <td className="px-4 py-3">{s.name}</td>
                     <td className="px-4 py-3">{s.categoryName ?? "—"}</td>
                     <td className="px-4 py-3">{formatDuration(s.durationMinutes)}</td>
@@ -963,26 +973,26 @@ export default function AdminPage() {
 
           <form
             onSubmit={saveCategory}
-            className="mt-4 grid gap-3 rounded-xl border border-black/10 p-5 dark:border-white/10 sm:grid-cols-2 lg:grid-cols-3"
+            className="mt-4 grid gap-3 hoa-surface p-5 sm:grid-cols-2 lg:grid-cols-3"
           >
             <input
               placeholder="Name"
               value={categoryForm.name}
               onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
               required
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             <input
               placeholder="Slug (optional)"
               value={categoryForm.slug}
               onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value })}
-              className="rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
             {editingCategoryId && (
               <button
                 type="button"
                 onClick={cancelCategoryEdit}
-                className="rounded-full border border-black/15 px-6 py-3 text-sm dark:border-white/15"
+                className="rounded-full border border-hoa-border-strong px-6 py-3 text-sm text-hoa-muted"
               >
                 Cancel
               </button>
@@ -990,15 +1000,15 @@ export default function AdminPage() {
             <button
               type="submit"
               disabled={addingCategory}
-              className="rounded-full bg-black px-6 py-3 text-sm font-medium text-white disabled:opacity-40 dark:bg-white dark:text-black"
+              className="cta-gradient rounded-full px-6 py-3 text-sm font-semibold disabled:opacity-40"
             >
               {addingCategory ? "Saving…" : editingCategoryId ? "Save category" : "Add category"}
             </button>
           </form>
 
-          <div className="mt-4 overflow-x-auto rounded-xl border border-black/10 dark:border-white/10">
+          <div className="mt-4 hoa-surface overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-black/10 bg-zinc-50 text-left dark:border-white/10 dark:bg-white/5">
+              <thead className="border-b border-hoa-border bg-white/5 text-left text-hoa-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Name</th>
                   <th className="px-4 py-3 font-medium">Slug</th>
@@ -1008,7 +1018,7 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {categories.map((c) => (
-                  <tr key={c.id} className="border-b border-black/5 last:border-0 dark:border-white/5">
+                  <tr key={c.id} className="border-b border-hoa-border last:border-0">
                     <td className="px-4 py-3">{c.name}</td>
                     <td className="px-4 py-3 font-mono">{c.slug}</td>
                     <td className="px-4 py-3">{c.active ? "Active" : "Inactive"}</td>
@@ -1034,9 +1044,9 @@ export default function AdminPage() {
       {tab === "reviews" && (
         <section>
           <h2 className="text-lg font-semibold">Review moderation</h2>
-          <div className="mt-4 overflow-x-auto rounded-xl border border-black/10 dark:border-white/10">
+          <div className="mt-4 hoa-surface overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-black/10 bg-zinc-50 text-left dark:border-white/10 dark:bg-white/5">
+              <thead className="border-b border-hoa-border bg-white/5 text-left text-hoa-muted">
                 <tr>
                   <th className="px-4 py-3 font-medium">Rating</th>
                   <th className="px-4 py-3 font-medium">Comment</th>
@@ -1046,7 +1056,7 @@ export default function AdminPage() {
               </thead>
               <tbody>
                 {reviews.map((r) => (
-                  <tr key={r.id} className="border-b border-black/5 last:border-0 dark:border-white/5">
+                  <tr key={r.id} className="border-b border-hoa-border last:border-0">
                     <td className="px-4 py-3">{"★".repeat(r.rating)}</td>
                     <td className="max-w-md px-4 py-3">{r.comment}</td>
                     <td className="px-4 py-3">{r.status}</td>
@@ -1076,8 +1086,8 @@ export default function AdminPage() {
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-black/10 p-5 dark:border-white/10">
-      <p className="text-sm text-zinc-500">{label}</p>
+    <div className="hoa-surface p-5">
+      <p className="text-sm text-hoa-muted">{label}</p>
       <p className="mt-1 text-2xl font-semibold tracking-tight">{value}</p>
     </div>
   );
@@ -1086,7 +1096,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
 function Table({ head, rows }: { head: string[]; rows: string[][] }) {
   return (
     <table className="mt-3 w-full text-sm">
-      <thead className="text-left text-zinc-500">
+      <thead className="text-left text-hoa-muted">
         <tr>
           {head.map((h) => (
             <th key={h} className="py-1 pr-4 font-medium">
@@ -1098,7 +1108,7 @@ function Table({ head, rows }: { head: string[]; rows: string[][] }) {
       <tbody>
         {rows.length === 0 ? (
           <tr>
-            <td colSpan={head.length} className="py-2 text-zinc-500">
+            <td colSpan={head.length} className="py-2 text-hoa-muted">
               No data
             </td>
           </tr>

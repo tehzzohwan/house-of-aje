@@ -30,12 +30,12 @@ export default function KebabMenu({ actions }: { actions: KebabAction[] }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="More actions"
-        className="rounded-full border border-black/15 px-3 py-1 text-xs hover:border-black dark:border-white/15 dark:hover:border-white"
+        className="rounded-full border border-hoa-border-strong px-3 py-1 text-xs text-hoa-muted hover:border-hoa-gold hover:text-hoa-text"
       >
         ⋯
       </button>
       {open && (
-        <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-lg border border-black/10 bg-white text-sm shadow-lg dark:border-white/10 dark:bg-zinc-900">
+        <div className="hoa-surface absolute right-0 z-20 mt-1 w-44 overflow-hidden text-sm shadow-xl">
           {actions.map((a) => (
             <button
               key={a.label}
@@ -44,8 +44,8 @@ export default function KebabMenu({ actions }: { actions: KebabAction[] }) {
                 setOpen(false);
                 a.onSelect();
               }}
-              className={`block w-full px-3 py-2 text-left hover:bg-black/5 dark:hover:bg-white/10 ${
-                a.danger ? "text-red-600 dark:text-red-400" : ""
+              className={`block w-full px-3 py-2 text-left text-hoa-text hover:bg-white/5 ${
+                a.danger ? "text-red-400" : ""
               }`}
             >
               {a.label}

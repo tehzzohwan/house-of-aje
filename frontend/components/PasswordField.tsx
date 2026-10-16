@@ -24,13 +24,13 @@ export default function PasswordField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         autoComplete={autoComplete}
-        className="block w-full rounded-lg border border-black/15 bg-white px-3 py-2 pr-14 text-sm dark:border-white/15 dark:bg-black"
+        className="block w-full rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 pr-14 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
       />
       <button
         type="button"
         onClick={() => setShow((v) => !v)}
         aria-label={show ? "Hide password" : "Show password"}
-        className="absolute inset-y-0 right-0 flex items-center px-3 text-xs font-medium text-zinc-500 hover:text-black dark:hover:text-white"
+        className="absolute inset-y-0 right-0 flex items-center px-3 text-xs font-medium text-hoa-muted hover:text-hoa-gold"
       >
         {show ? "Hide" : "Show"}
       </button>

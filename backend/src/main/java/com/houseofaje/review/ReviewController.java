@@ -32,4 +32,9 @@ public class ReviewController {
                                       @RequestParam(defaultValue = "10") int limit) {
         return reviews.publishedByService(serviceId, limit);
     }
+
+    @GetMapping("/latest")
+    public ReviewSummary latest(@RequestParam(defaultValue = "3") int limit) {
+        return reviews.summary(limit);
+    }
 }
