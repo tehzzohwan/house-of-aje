@@ -1,5 +1,7 @@
 package com.houseofaje.booking;
 
+import com.houseofaje.payment.PaymentState;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -83,24 +85,32 @@ public class BookingRepository {
                 SELECT b.id, b.reference,
                        c.first_name || ' ' || c.last_name AS customer_name,
                        s.name AS service_name, st.name AS staff_name,
-                       b.start_at, b.end_at, b.status, b.price, b.deposit_amount
+                       b.start_at, b.end_at, b.status, b.price, b.deposit_amount,
+                       d.status AS deposit_status, bal.status AS balance_status
                 FROM bookings b
                 JOIN customers c ON c.id = b.customer_id
                 JOIN services s ON s.id = b.service_id
                 JOIN staff st ON st.id = b.staff_id
+                LEFT JOIN payments d ON d.booking_id = b.id AND d.type = 'DEPOSIT' AND d.deleted_at IS NULL
+                LEFT JOIN payments bal ON bal.booking_id = b.id AND bal.type = 'BALANCE' AND bal.deleted_at IS NULL
                 WHERE b.deleted_at IS NULL
                 """;
-        RowMapper<AdminBooking> mapper = (rs, n) -> new AdminBooking(
-                rs.getObject("id", UUID.class),
-                rs.getString("reference"),
-                rs.getString("customer_name"),
-                rs.getString("service_name"),
-                rs.getString("staff_name"),
-                rs.getObject("start_at", OffsetDateTime.class).toInstant(),
-                rs.getObject("end_at", OffsetDateTime.class).toInstant(),
-                BookingStatus.valueOf(rs.getString("status")),
-                rs.getBigDecimal("price"),
-                rs.getBigDecimal("deposit_amount"));
+        RowMapper<AdminBooking> mapper = (rs, n) -> {
+            BigDecimal price = rs.getBigDecimal("price");
+            BigDecimal deposit = rs.getBigDecimal("deposit_amount");
+            return new AdminBooking(
+                    rs.getObject("id", UUID.class),
+                    rs.getString("reference"),
+                    rs.getString("customer_name"),
+                    rs.getString("service_name"),
+                    rs.getString("staff_name"),
+                    rs.getObject("start_at", OffsetDateTime.class).toInstant(),
+                    rs.getObject("end_at", OffsetDateTime.class).toInstant(),
+                    BookingStatus.valueOf(rs.getString("status")),
+                    price,
+                    deposit,
+                    paymentState(rs.getString("deposit_status"), rs.getString("balance_status"), price, deposit));
+        };
         List<AdminBooking> items = status == null
                 ? jdbc.query(base + " ORDER BY b.start_at DESC LIMIT ? OFFSET ?", mapper, size, offset)
                 : jdbc.query(base + " AND b.status = ? ORDER BY b.start_at DESC LIMIT ? OFFSET ?",
@@ -108,26 +118,34 @@ public class BookingRepository {
         return new AdminBookingPage(items, total);
     }
 
-    private static final RowMapper<BookingSummary> SUMMARY_MAPPER = (rs, n) -> new BookingSummary(
-            rs.getObject("id", UUID.class),
-            rs.getString("reference"),
-            rs.getString("service_name"),
-            rs.getString("staff_name"),
-            rs.getObject("start_at", OffsetDateTime.class).toInstant(),
-            BookingStatus.valueOf(rs.getString("status")),
-            rs.getBigDecimal("price"),
-            rs.getBigDecimal("deposit_amount"),
-            rs.getObject("created_at", OffsetDateTime.class).toInstant(),
-            rs.getBoolean("reviewed"));
+    private static final RowMapper<BookingSummary> SUMMARY_MAPPER = (rs, n) -> {
+        BigDecimal price = rs.getBigDecimal("price");
+        BigDecimal deposit = rs.getBigDecimal("deposit_amount");
+        return new BookingSummary(
+                rs.getObject("id", UUID.class),
+                rs.getString("reference"),
+                rs.getString("service_name"),
+                rs.getString("staff_name"),
+                rs.getObject("start_at", OffsetDateTime.class).toInstant(),
+                BookingStatus.valueOf(rs.getString("status")),
+                price,
+                deposit,
+                rs.getObject("created_at", OffsetDateTime.class).toInstant(),
+                rs.getBoolean("reviewed"),
+                paymentState(rs.getString("deposit_status"), rs.getString("balance_status"), price, deposit));
+    };
 
     private static final String SUMMARY_SQL = """
             SELECT b.id, b.reference, s.name AS service_name, st.name AS staff_name,
                    b.start_at, b.status, b.price, b.deposit_amount, b.created_at,
-                   (r.id IS NOT NULL) AS reviewed
+                   (r.id IS NOT NULL) AS reviewed,
+                   d.status AS deposit_status, bal.status AS balance_status
             FROM bookings b
             JOIN services s ON s.id = b.service_id
             JOIN staff st ON st.id = b.staff_id
             LEFT JOIN reviews r ON r.booking_id = b.id
+            LEFT JOIN payments d ON d.booking_id = b.id AND d.type = 'DEPOSIT' AND d.deleted_at IS NULL
+            LEFT JOIN payments bal ON bal.booking_id = b.id AND bal.type = 'BALANCE' AND bal.deleted_at IS NULL
             WHERE b.deleted_at IS NULL
             """;
 
@@ -151,5 +169,20 @@ public class BookingRepository {
         return jdbc.update(
                 "UPDATE bookings SET status = ? WHERE id = ? AND status = ? AND deleted_at IS NULL",
                 to.name(), id, from.name()) == 1;
+    }
+
+    /** Booking-level payment progress, derived from the deposit/balance payment rows. */
+    private static PaymentState paymentState(String depositStatus, String balanceStatus,
+                                             BigDecimal price, BigDecimal depositAmount) {
+        if (!"PAID".equals(depositStatus)) {
+            return PaymentState.AWAITING_PAYMENT;
+        }
+        if (depositAmount.compareTo(price) == 0) {
+            return PaymentState.PAID_IN_FULL; // paid in full up front
+        }
+        if ("PAID".equals(balanceStatus)) {
+            return PaymentState.PAID_IN_FULL;
+        }
+        return PaymentState.DEPOSIT_PAID;
     }
 }

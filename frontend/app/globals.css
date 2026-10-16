@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
+/* House of Aje is a permanently dark, warm luxury theme. The `dark` variant is
+   class-based so every existing `dark:*` utility applies regardless of the
+   visitor's system preference. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0b080a;
+  --foreground: #ededed;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -12,15 +18,90 @@
   --font-mono: var(--font-jetbrains-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-hoa-bg: #0b080a;
+  --color-hoa-text: #ededed;
+  --color-hoa-muted: #b3a4ab;
+  --color-hoa-border: #1f1a1d;
+  --color-hoa-border-strong: #4a3a40;
+  --color-hoa-gold: #ebd3ae;
+  --color-hoa-blush: #f3c9d5;
+  --color-hoa-rose: #ebb9c6;
+  --color-hoa-card: #f6e9d2;
+  --color-hoa-soft: #d9c7ce;
+  --color-hoa-ink: #1a1015;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Component classes live in the `components` cascade layer so Tailwind
+   utilities (e.g. border-hoa-gold) can still override them. */
+@layer components {
+  /* Gradient-border luxury card (padding-box/border-box trick). */
+  .lux-card {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(160deg, #1d1319, #120c11) padding-box,
+      linear-gradient(180deg, #ebd3ae, #7a4a5c, #ebd3ae) border-box;
+    border-radius: 26px;
+    box-shadow: 0 20px 60px -20px rgba(235, 211, 174, 0.05);
+  }
+
+  /* Flat raised surface for forms, tables and dropdowns. */
+  .hoa-surface {
+    background: #151013;
+    border: 1px solid #2a2126;
+    border-radius: 16px;
+  }
+
+  /* Pill gradient CTA button. */
+  .cta-gradient {
+    background: linear-gradient(135deg, #f3d9b3, #ebb9c6);
+    color: #1a1015;
+    border-radius: 9999px;
+    transition: filter 0.2s ease;
+  }
+
+  .cta-gradient:hover {
+    filter: brightness(1.06);
+  }
+
+  /* 3D flip card — hero appointment preview <-> category list. Plain CSS so the
+     transforms don't depend on Tailwind's arbitrary-property parsing. */
+  .flip {
+    perspective: 1200px;
+  }
+
+  .flip-inner {
+    display: grid;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .flip-inner.is-flipped {
+    transform: rotateY(180deg);
+  }
+
+  .flip-face {
+    grid-column: 1;
+    grid-row: 1;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .flip-face--back {
+    transform: rotateY(180deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-inner,
+  .cta-gradient {
+    transition: none;
+  }
 }

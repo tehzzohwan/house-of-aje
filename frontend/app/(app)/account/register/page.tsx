@@ -22,7 +22,7 @@ export default function CustomerRegisterPage() {
     setLoading(true);
     setError(null);
     try {
-      const result = await customerApi.register({
+      await customerApi.register({
         firstName,
         lastName,
         username,
@@ -37,10 +37,13 @@ export default function CustomerRegisterPage() {
     }
   }
 
+  const inputClass =
+    "mt-2 block w-full rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none";
+
   return (
     <form onSubmit={onSubmit} className="mx-auto max-w-sm space-y-4">
       <h1 className="text-3xl font-semibold tracking-tight">Create an account</h1>
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-hoa-muted">
         Registering with the phone you book with links your existing bookings.
       </p>
 
@@ -51,7 +54,7 @@ export default function CustomerRegisterPage() {
             required
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            className="mt-2 block w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+            className={inputClass}
           />
         </label>
         <label className="block text-sm font-medium">
@@ -60,7 +63,7 @@ export default function CustomerRegisterPage() {
             required
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            className="mt-2 block w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+            className={inputClass}
           />
         </label>
       </div>
@@ -72,19 +75,19 @@ export default function CustomerRegisterPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           autoComplete="username"
-          className="mt-2 block w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+          className={inputClass}
         />
       </label>
 
       <label className="block text-sm font-medium">
         Email{" "}
-        <span className="font-normal text-zinc-400">(optional)</span>
+        <span className="font-normal text-hoa-muted">(optional)</span>
         <input
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
-          className="mt-2 block w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+          className={inputClass}
         />
       </label>
 
@@ -96,7 +99,7 @@ export default function CustomerRegisterPage() {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="08012345678"
-          className="mt-2 block w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+          className={inputClass}
         />
       </label>
 
@@ -105,19 +108,19 @@ export default function CustomerRegisterPage() {
         <PasswordField required value={password} onChange={setPassword} autoComplete="new-password" />
       </label>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-full bg-black px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-40 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+        className="cta-gradient w-full px-6 py-3 text-sm font-semibold disabled:opacity-40"
       >
         {loading ? "Creating account…" : "Create account"}
       </button>
 
-      <p className="text-center text-sm text-zinc-500">
+      <p className="text-center text-sm text-hoa-muted">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-black underline dark:text-white">
+        <Link href="/login" className="font-medium text-hoa-gold underline">
           Sign in
         </Link>
       </p>

@@ -1,5 +1,6 @@
 package com.houseofaje.booking;
 
+import com.houseofaje.payment.PaymentState;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
@@ -15,4 +16,5 @@ public record AdminBooking(
         Instant endAt,
         BookingStatus status,
         BigDecimal price,
-        BigDecimal depositAmount) {}
+        BigDecimal depositAmount,
+        PaymentState paymentState) {}

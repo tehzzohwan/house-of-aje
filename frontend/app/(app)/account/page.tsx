@@ -22,6 +22,12 @@ const statusLabel: Record<string, string> = {
   EXPIRED: "Expired",
 };
 
+const paymentStateLabel: Record<string, string> = {
+  AWAITING_PAYMENT: "Awaiting payment",
+  DEPOSIT_PAID: "Deposit paid",
+  PAID_IN_FULL: "Payment complete",
+};
+
 const notificationLabel: Record<string, string> = {
   CONFIRMATION: "Booking confirmed",
   REMINDER_24H: "Appointment tomorrow",
@@ -30,6 +36,13 @@ const notificationLabel: Record<string, string> = {
   CANCELLATION: "Booking cancelled",
   REVIEW_REQUEST: "Please rate your visit",
 };
+
+const statusLabelFor = (b: BookingSummary) =>
+  b.status === "PENDING_PAYMENT"
+    ? b.depositAmount >= b.price
+      ? "Awaiting full payment"
+      : "Awaiting deposit"
+    : statusLabel[b.status] ?? b.status;
 
 export default function AccountPage() {
   const [authed, setAuthed] = useState(false);
@@ -51,6 +64,11 @@ export default function AccountPage() {
   const [balanceInstructions, setBalanceInstructions] = useState<DepositInstructions | null>(null);
   const [payingBalance, setPayingBalance] = useState(false);
   const [balanceError, setBalanceError] = useState<string | null>(null);
+
+  const [depositBooking, setDepositBooking] = useState<BookingSummary | null>(null);
+  const [depositInstructions, setDepositInstructions] = useState<DepositInstructions | null>(null);
+  const [payingDeposit, setPayingDeposit] = useState(false);
+  const [depositError, setDepositError] = useState<string | null>(null);
 
   useEffect(() => {
     authApi
@@ -152,6 +170,21 @@ export default function AccountPage() {
     }
   }
 
+  async function payDeposit(b: BookingSummary) {
+    setDepositBooking(b);
+    setDepositInstructions(null);
+    setDepositError(null);
+    setPayingDeposit(true);
+    try {
+      const instructions = await customerApi.payDeposit(b.id);
+      setDepositInstructions(instructions);
+    } catch (e) {
+      setDepositError(e instanceof Error ? e.message : "Failed to load payment instructions");
+    } finally {
+      setPayingDeposit(false);
+    }
+  }
+
   async function openNotification(n: CustomerNotification) {
     if (n.readAt) return;
     try {
@@ -165,21 +198,21 @@ export default function AccountPage() {
   }
 
   if (!ready) {
-    return <p className="text-sm text-zinc-500">Loading…</p>;
+    return <p className="text-sm text-hoa-muted">Loading…</p>;
   }
 
   if (!authed) {
     return (
       <div className="mx-auto max-w-sm space-y-4 text-center">
         <h1 className="text-3xl font-semibold tracking-tight">Your account</h1>
-        <p className="text-zinc-500">Sign in to view your bookings.</p>
+        <p className="text-hoa-muted">Sign in to view your bookings.</p>
         <Link
           href="/login"
-          className="inline-block w-full rounded-full bg-black px-6 py-3 text-sm font-medium text-white dark:bg-white dark:text-black"
+          className="cta-gradient inline-block w-full px-6 py-3 text-sm font-semibold"
         >
           Sign in
         </Link>
-        <Link href="/account/register" className="inline-block text-sm text-zinc-500 underline">
+        <Link href="/account/register" className="inline-block text-sm text-hoa-muted underline">
           Create an account
         </Link>
       </div>
@@ -189,13 +222,52 @@ export default function AccountPage() {
   const cancellable = (b: BookingSummary) =>
     b.status === "PENDING_PAYMENT" || b.status === "CONFIRMED";
 
+  const nowMs = Date.now();
+  const upcomingCount = bookings.filter(
+    (b) => b.status === "CONFIRMED" && new Date(b.startAt).getTime() > nowMs,
+  ).length;
+  const completedCount = bookings.filter((b) => b.status === "COMPLETED").length;
+  const totalSpent = bookings
+    .filter((b) => b.status === "COMPLETED")
+    .reduce((sum, b) => sum + b.price, 0);
+  const nextBooking = [...bookings]
+    .filter(
+      (b) =>
+        (b.status === "CONFIRMED" || b.status === "PENDING_PAYMENT") &&
+        new Date(b.startAt).getTime() > nowMs,
+    )
+    .sort((a, b) => a.startAt.localeCompare(b.startAt))[0];
+
+  const overview = [
+    { label: "Upcoming", value: String(upcomingCount) },
+    { label: "Completed", value: String(completedCount) },
+    { label: "Total spent", value: formatMoney(totalSpent) },
+    {
+      label: "Next appointment",
+      value: nextBooking ? formatDateTime(nextBooking.startAt) : "—",
+    },
+  ];
+
   return (
     <div>
       <h1 className="text-3xl font-semibold tracking-tight">
         {customer ? `${customer.firstName} ${customer.lastName}` : "Your account"}
       </h1>
       {customer?.username && (
-        <p className="mt-1 text-sm text-zinc-500">@{customer.username}</p>
+        <p className="mt-1 text-sm text-hoa-muted">@{customer.username}</p>
+      )}
+
+      {!loading && bookings.length > 0 && (
+        <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {overview.map((stat) => (
+            <div key={stat.label} className="hoa-surface p-4">
+              <p className="font-mono text-[11px] uppercase tracking-wider text-hoa-muted">
+                {stat.label}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-hoa-text">{stat.value}</p>
+            </div>
+          ))}
+        </section>
       )}
 
       {notifications.length > 0 && (
@@ -209,8 +281,8 @@ export default function AccountPage() {
                   onClick={() => openNotification(n)}
                   className={`flex w-full items-center justify-between gap-4 rounded-xl border px-4 py-3 text-left text-sm ${
                     n.readAt
-                      ? "border-black/10 text-zinc-500 dark:border-white/10"
-                      : "border-black bg-black/5 dark:border-white dark:bg-white/10"
+                      ? "border-hoa-border text-hoa-muted"
+                      : "border-hoa-gold bg-white/10"
                   }`}
                 >
                   <span>
@@ -218,14 +290,14 @@ export default function AccountPage() {
                       {notificationLabel[n.type] ?? n.type}
                     </span>
                     {n.serviceName && (
-                      <span className="block text-xs text-zinc-500">
+                      <span className="block text-xs text-hoa-muted">
                         {n.serviceName}
                         {n.startAt ? ` · ${formatDateTime(n.startAt)}` : ""}
                       </span>
                     )}
                   </span>
                   {!n.readAt && (
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-black dark:bg-white" />
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-hoa-gold" />
                   )}
                 </button>
               </li>
@@ -234,15 +306,16 @@ export default function AccountPage() {
         </section>
       )}
 
-      {error && <p className="mt-6 text-sm text-red-600">{error}</p>}
-      {balanceError && <p className="mt-6 text-sm text-red-600">{balanceError}</p>}
+      {error && <p className="mt-6 text-sm text-red-400">{error}</p>}
+      {balanceError && <p className="mt-6 text-sm text-red-400">{balanceError}</p>}
+      {depositError && <p className="mt-6 text-sm text-red-400">{depositError}</p>}
 
       {loading ? (
-        <p className="mt-8 text-sm text-zinc-500">Loading…</p>
+        <p className="mt-8 text-sm text-hoa-muted">Loading…</p>
       ) : bookings.length === 0 ? (
-        <p className="mt-8 text-sm text-zinc-500">
+        <p className="mt-8 text-sm text-hoa-muted">
           You have no bookings yet.{" "}
-          <Link href="/book" className="text-black underline dark:text-white">
+          <Link href="/book" className="text-hoa-gold underline">
             Book an appointment
           </Link>
         </p>
@@ -251,44 +324,65 @@ export default function AccountPage() {
           {bookings.map((b) => (
             <li
               key={b.id}
-              className="rounded-xl border border-black/10 p-4 dark:border-white/10"
+              className="hoa-surface p-4"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-medium">{b.serviceName}</p>
-                  <p className="text-sm text-zinc-500">
+                  <p className="text-sm text-hoa-muted">
                     {formatDateTime(b.startAt)} · with {b.staffName}
                   </p>
                   {b.status === "CONFIRMED" && (
-                    <p className="mt-1 text-sm font-medium text-black dark:text-white">
+                    <p className="mt-1 text-sm font-medium text-hoa-gold">
                       <Countdown startAt={b.startAt} />
                     </p>
                   )}
                   {b.status === "PENDING_PAYMENT" && (
-                    <p className="mt-1 text-sm font-medium text-amber-600 dark:text-amber-400">
-                      <DepositCountdown createdAt={b.createdAt} />
+                    <p className="mt-1 text-sm font-medium text-hoa-gold">
+                      <DepositCountdown
+                        createdAt={b.createdAt}
+                        payFull={b.depositAmount >= b.price}
+                      />
                     </p>
                   )}
-                  <p className="mt-1 font-mono text-xs text-zinc-400">{b.reference}</p>
+                  <p className="mt-1 font-mono text-xs text-hoa-muted">{b.reference}</p>
                 </div>
                 <div className="text-right">
-                  <span className="inline-block rounded-full bg-black/5 px-2.5 py-1 text-xs font-medium dark:bg-white/10">
-                    {statusLabel[b.status] ?? b.status}
+                  <span className="inline-block rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium">
+                    {statusLabelFor(b)}
                   </span>
+                  <p className="mt-1">
+                    <span className="inline-block rounded-full border border-hoa-border-strong px-2.5 py-1 text-xs text-hoa-muted">
+                      {paymentStateLabel[b.paymentState] ?? b.paymentState}
+                    </span>
+                  </p>
                   <p className="mt-2 text-sm">{formatMoney(b.price)}</p>
                   {b.status === "COMPLETED" && !b.reviewed && (
                     <button
                       onClick={() => openReview(b)}
-                      className="mt-2 rounded-full border border-black/15 px-3 py-1 text-xs hover:border-black dark:border-white/15 dark:hover:border-white"
+                      className="mt-2 rounded-full border border-hoa-border-strong px-3 py-1 text-xs hover:border-hoa-gold hover:text-hoa-text"
                     >
                       Rate this service
+                    </button>
+                  )}
+                  {b.status === "PENDING_PAYMENT" && (
+                    <button
+                      onClick={() => payDeposit(b)}
+                      disabled={payingDeposit}
+                      className="mt-2 block w-full rounded-full border border-hoa-border-strong px-3 py-1 text-xs hover:border-hoa-gold disabled:opacity-40"
+                    >
+                      {payingDeposit
+                        ? "Preparing…"
+                        : b.depositAmount >= b.price
+                          ? "Pay in full"
+                          : "Pay deposit"}
                     </button>
                   )}
                   {b.status === "CONFIRMED" && b.depositAmount < b.price && (
                     <button
                       onClick={() => payBalance(b)}
                       disabled={payingBalance}
-                      className="mt-2 block w-full rounded-full border border-black/15 px-3 py-1 text-xs hover:border-black disabled:opacity-40 dark:border-white/15 dark:hover:border-white"
+                      className="mt-2 block w-full rounded-full border border-hoa-border-strong px-3 py-1 text-xs hover:border-hoa-gold disabled:opacity-40"
                     >
                       {payingBalance
                         ? "Preparing…"
@@ -299,7 +393,7 @@ export default function AccountPage() {
                     <button
                       onClick={() => cancelBooking(b)}
                       disabled={cancelingId === b.id}
-                      className="mt-2 block w-full rounded-full border border-red-300 px-3 py-1 text-xs text-red-600 hover:border-red-500 disabled:opacity-40 dark:border-red-800 dark:text-red-400"
+                      className="mt-2 block w-full rounded-full border border-red-800 px-3 py-1 text-xs text-red-400 hover:border-red-500 disabled:opacity-40"
                     >
                       {cancelingId === b.id ? "Cancelling…" : "Cancel booking"}
                     </button>
@@ -313,9 +407,9 @@ export default function AccountPage() {
 
       {reviewing && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+          <div className="lux-card w-full max-w-md p-6">
             <h2 className="text-xl font-semibold tracking-tight">Rate your visit</h2>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="mt-1 text-sm text-hoa-muted">
               {reviewing.serviceName} · {formatDateTime(reviewing.startAt)}
             </p>
 
@@ -326,7 +420,7 @@ export default function AccountPage() {
                   type="button"
                   onClick={() => setRating(star)}
                   aria-label={`${star} star${star > 1 ? "s" : ""}`}
-                  className={`text-3xl transition-transform hover:scale-110 ${
+                  className={`text-3xl text-hoa-gold transition-transform hover:scale-110 ${
                     star <= rating ? "opacity-100" : "opacity-30"
                   }`}
                 >
@@ -340,22 +434,22 @@ export default function AccountPage() {
               onChange={(e) => setComment(e.target.value)}
               placeholder="How was your experience? (optional)"
               rows={3}
-              className="mt-4 w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-sm dark:border-white/15 dark:bg-black"
+              className="mt-4 w-full rounded-lg border border-hoa-border-strong bg-white/5 px-3 py-2 text-sm text-hoa-text placeholder:text-hoa-muted focus:border-hoa-gold focus:outline-none"
             />
 
-            {reviewError && <p className="mt-2 text-sm text-red-600">{reviewError}</p>}
+            {reviewError && <p className="mt-2 text-sm text-red-400">{reviewError}</p>}
 
             <div className="mt-4 flex justify-end gap-3">
               <button
                 onClick={() => setReviewing(null)}
-                className="rounded-full px-4 py-2 text-sm text-zinc-500 hover:text-black dark:hover:text-white"
+                className="rounded-full px-4 py-2 text-sm text-hoa-muted hover:text-hoa-text"
               >
                 Not now
               </button>
               <button
                 onClick={submitReview}
                 disabled={rating < 1 || submittingReview}
-                className="rounded-full bg-black px-6 py-2 text-sm font-medium text-white disabled:opacity-40 dark:bg-white dark:text-black"
+                className="cta-gradient px-6 py-2 text-sm font-semibold disabled:opacity-40"
               >
                 {submittingReview ? "Submitting…" : "Submit rating"}
               </button>
@@ -366,28 +460,28 @@ export default function AccountPage() {
 
       {balanceInstructions && balanceBooking && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-zinc-900">
+          <div className="lux-card w-full max-w-md p-6">
             <h2 className="text-xl font-semibold tracking-tight">Pay your balance</h2>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="mt-1 text-sm text-hoa-muted">
               {balanceBooking.serviceName} ·{" "}
               {formatMoney(balanceBooking.price - balanceBooking.depositAmount)} remaining
             </p>
 
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-zinc-500">Bank</dt>
+                <dt className="text-hoa-muted">Bank</dt>
                 <dd>{balanceInstructions.bankName}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-zinc-500">Account number</dt>
+                <dt className="text-hoa-muted">Account number</dt>
                 <dd className="font-mono">{balanceInstructions.accountNumber}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-zinc-500">Account name</dt>
+                <dt className="text-hoa-muted">Account name</dt>
                 <dd>{balanceInstructions.accountName}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-zinc-500">Reference</dt>
+                <dt className="text-hoa-muted">Reference</dt>
                 <dd className="font-mono">{balanceInstructions.providerReference}</dd>
               </div>
             </dl>
@@ -398,7 +492,53 @@ export default function AccountPage() {
                   setBalanceInstructions(null);
                   setBalanceBooking(null);
                 }}
-                className="rounded-full bg-black px-6 py-2 text-sm font-medium text-white dark:bg-white dark:text-black"
+                className="cta-gradient px-6 py-2 text-sm font-semibold"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {depositInstructions && depositBooking && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
+          <div className="lux-card w-full max-w-md p-6">
+            <h2 className="text-xl font-semibold tracking-tight">
+              {depositBooking.depositAmount >= depositBooking.price
+                ? "Complete your payment"
+                : "Pay your deposit"}
+            </h2>
+            <p className="mt-1 text-sm text-hoa-muted">
+              {depositBooking.serviceName} · {formatMoney(depositBooking.depositAmount)} due
+            </p>
+
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-hoa-muted">Bank</dt>
+                <dd>{depositInstructions.bankName}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-hoa-muted">Account number</dt>
+                <dd className="font-mono">{depositInstructions.accountNumber}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-hoa-muted">Account name</dt>
+                <dd>{depositInstructions.accountName}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-hoa-muted">Reference</dt>
+                <dd className="font-mono">{depositInstructions.providerReference}</dd>
+              </div>
+            </dl>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setDepositInstructions(null);
+                  setDepositBooking(null);
+                }}
+                className="cta-gradient px-6 py-2 text-sm font-semibold"
               >
                 Done
               </button>

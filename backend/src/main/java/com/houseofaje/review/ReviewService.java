@@ -52,6 +52,13 @@ public class ReviewService {
         return reviews.findPublishedByService(serviceId, limit);
     }
 
+    public ReviewSummary summary(int limit) {
+        return new ReviewSummary(
+                reviews.findPublishedLatest(limit),
+                reviews.averageRating(),
+                reviews.countPublished());
+    }
+
     public List<Review> list(ReviewStatus status, int limit) {
         return reviews.findForModeration(status, limit);
     }

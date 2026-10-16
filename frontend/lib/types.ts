@@ -101,6 +101,8 @@ export type BookingStatus =
   | "NO_SHOW"
   | "EXPIRED";
 
+export type PaymentState = "AWAITING_PAYMENT" | "DEPOSIT_PAID" | "PAID_IN_FULL";
+
 export interface Booking {
   id: UUID;
   reference: string;
@@ -133,6 +135,12 @@ export interface PublishedReview {
   rating: number;
   comment: string;
   createdAt: string;
+}
+
+export interface ReviewSummary {
+  reviews: PublishedReview[];
+  averageRating: number;
+  count: number;
 }
 
 export type ReviewStatus = "PUBLISHED" | "HIDDEN";
@@ -178,6 +186,7 @@ export interface AdminBooking {
   status: BookingStatus;
   price: number;
   depositAmount: number;
+  paymentState: PaymentState;
 }
 
 export interface AdminBookingPage {
@@ -201,6 +210,7 @@ export interface BookingSummary {
   depositAmount: number;
   createdAt: string;
   reviewed: boolean;
+  paymentState: PaymentState;
 }
 
 export interface StaffProfile {

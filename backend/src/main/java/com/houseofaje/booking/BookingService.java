@@ -283,6 +283,26 @@ public class BookingService {
         return instructions;
     }
 
+    /**
+     * Re-issues the bank-transfer instructions for a booking still awaiting its
+     * deposit (or full) payment. Idempotent: the provider resolves the same
+     * stable virtual account from the booking reference.
+     */
+    public DepositInstructions payDeposit(UUID bookingId) {
+        Booking booking = load(bookingId);
+        if (booking.status() != BookingStatus.PENDING_PAYMENT) {
+            throw new IllegalArgumentException("Only bookings awaiting payment can pay the deposit");
+        }
+        CustomerRow customer = loadCustomer(booking.customerId());
+        Payment deposit = payments.findDepositForBooking(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("No deposit found for booking " + bookingId));
+        DepositInstructions instructions = paymentProvider.initiateDeposit(
+                new DepositRequest(booking.reference(), deposit.amount(), deposit.currency(),
+                        customer.email(), customer.phone()));
+        payments.updateProviderReference(deposit.id(), instructions.providerReference());
+        return instructions;
+    }
+
     private BookingResult replay(Payment payment) {
         Booking booking = bookings.findById(payment.bookingId())
                 .orElseThrow(() -> new BookingNotFoundException(payment.bookingId()));

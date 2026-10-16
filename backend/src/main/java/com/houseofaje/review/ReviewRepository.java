@@ -26,6 +26,13 @@ public class ReviewRepository {
             ReviewStatus.valueOf(rs.getString("status")),
             rs.getObject("created_at", OffsetDateTime.class).toInstant());
 
+    private static final RowMapper<PublishedReview> PUBLISHED_MAPPER = (rs, n) -> new PublishedReview(
+            rs.getObject("id", UUID.class),
+            rs.getString("customer_name"),
+            rs.getInt("rating"),
+            rs.getString("comment"),
+            rs.getObject("created_at", OffsetDateTime.class).toInstant());
+
     public void insert(Review review) {
         jdbc.update("""
                 INSERT INTO reviews (id, booking_id, customer_id, rating, comment, status)
@@ -49,13 +56,33 @@ public class ReviewRepository {
                 ORDER BY r.created_at DESC
                 LIMIT ?
                 """,
-                (rs, n) -> new PublishedReview(
-                        rs.getObject("id", UUID.class),
-                        rs.getString("customer_name"),
-                        rs.getInt("rating"),
-                        rs.getString("comment"),
-                        rs.getObject("created_at", OffsetDateTime.class).toInstant()),
+                PUBLISHED_MAPPER,
                 serviceId, limit);
+    }
+
+    /** Latest published reviews across all services, newest first. */
+    public List<PublishedReview> findPublishedLatest(int limit) {
+        return jdbc.query("""
+                SELECT r.id, c.first_name || ' ' || c.last_name AS customer_name, r.rating, r.comment, r.created_at
+                FROM reviews r
+                JOIN customers c ON c.id = r.customer_id
+                WHERE r.status = 'PUBLISHED'
+                ORDER BY r.created_at DESC
+                LIMIT ?
+                """,
+                PUBLISHED_MAPPER, limit);
+    }
+
+    public double averageRating() {
+        Double avg = jdbc.queryForObject(
+                "SELECT AVG(rating) FROM reviews WHERE status = 'PUBLISHED'", Double.class);
+        return avg == null ? 0.0 : avg;
+    }
+
+    public long countPublished() {
+        Long count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM reviews WHERE status = 'PUBLISHED'", Long.class);
+        return count == null ? 0L : count;
     }
 
     public List<Review> findForModeration(ReviewStatus status, int limit) {
